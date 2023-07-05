@@ -1,5 +1,6 @@
 package com.example.rockpaperscissors
 
+import android.util.Log
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.core.InfiniteRepeatableSpec
 import androidx.compose.animation.core.LinearEasing
@@ -22,12 +23,15 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import kotlin.random.Random
 
 @Composable
 fun Battle() {
-    val screenHeight = LocalConfiguration.current.screenHeightDp
-    val screenWidth = LocalConfiguration.current.screenWidthDp
+    val screenHeight = LocalConfiguration.current.screenHeightDp - 24
+    val screenWidth = LocalConfiguration.current.screenWidthDp - 24
+
+    var prevWasY by remember {
+        mutableStateOf(false)
+    }
 
     var startAnimation by remember {
         mutableStateOf(true)
@@ -35,6 +39,9 @@ fun Battle() {
 
     var x by remember { mutableStateOf(0) }
     var y by remember { mutableStateOf(0) }
+
+    var prevX by remember { mutableStateOf(0) }
+    var prevY by remember { mutableStateOf(0) }
 
     var finalY by remember {
         mutableStateOf(screenHeight)
@@ -44,7 +51,7 @@ fun Battle() {
     }
 
     val rockOffSetY by animateIntAsState(
-        targetValue = if (startAnimation) 0 else finalY,
+        targetValue = if (startAnimation) 100 else finalY,
         animationSpec = InfiniteRepeatableSpec(
             animation = tween(2500, easing = LinearEasing), repeatMode = RepeatMode.Reverse
         )
@@ -59,12 +66,34 @@ fun Battle() {
 
     LaunchedEffect(key1 = rockOffSetY, key2 = rockOffSetY, block = {
         startAnimation = false
-        if (rockOffSetY == finalY || rockOffSetX == finalX) {
-            val randX = Random.nextInt(from = 0, until = screenWidth)
-            val randY = Random.nextInt(from = 0, until = screenHeight)
-            finalX = randX
-            finalY = randY
+        if (rockOffSetY == finalY && prevWasY.not()) {
+            prevWasY = true
+            Log.e("checking", "in Y >>>  $rockOffSetX >>> $finalX >>>> $rockOffSetY >>> $finalY")
+            prevY = finalY
 
+            val percX: Float = (((screenWidth.toFloat() - rockOffSetX.toFloat()) * 100) / screenWidth.toFloat()) / 100
+            finalY = (screenHeight - (screenHeight * percX)).toInt()
+
+            finalX = if(rockOffSetX > prevX)
+                screenWidth
+            else
+                0
+
+            x = rockOffSetX
+            y = rockOffSetY
+        } else if (rockOffSetX == finalX) {
+            prevWasY = false
+            Log.e("checking", "in X >>>  $rockOffSetX >>> $finalX >>>> $rockOffSetY >>> $finalY")
+
+            prevX = finalX
+
+            val percY: Float = (((screenHeight.toFloat() - rockOffSetY.toFloat()) * 100) / screenHeight.toFloat()) / 100
+            finalX = (screenWidth - (screenWidth * percY)).toInt()
+
+            finalY = if(rockOffSetY > prevY)
+                screenHeight
+            else
+                0
 
             x = rockOffSetX
             y = rockOffSetY
